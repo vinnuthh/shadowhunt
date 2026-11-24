@@ -21,3 +21,4 @@ backend/data/
 # Editors / OS
 .DS_Store
 Thumbs.db
+*.exe
