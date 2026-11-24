@@ -62,4 +62,13 @@ export const api = {
       method: 'POST',
       token,
     }),
+
+  getCampus: () => request('/api/campus'),
+
+  updateLocation: (code, token, lat, lng) =>
+    request(`/api/rooms/${encodeURIComponent(code)}/location`, {
+      method: 'POST',
+      token,
+      body: { lat, lng },
+    }),
 }

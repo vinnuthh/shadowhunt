@@ -1,19 +1,27 @@
+import CampusMap from '../components/CampusMap.jsx'
 import PlayerList from '../components/PlayerList.jsx'
 
 const ROLE_COPY = {
   HUNTER: {
     title: 'You are a Hunter',
-    text: 'Find the Shadows. Their positions will appear on your map in the next phase.',
+    text: 'Patrol BMSIT campus and locate Shadows. Radar sweeps ping approximate positions every 25s.',
     accent: 'amber',
   },
   SHADOW: {
     title: 'You are a Shadow',
-    text: 'Stay hidden. You will see only approximate Hunter positions on your map.',
+    text: 'Stay hidden within BMSIT buildings & cover. You can monitor hunter radar sweeps.',
     accent: 'violet',
   },
 }
 
-export default function Match({ room, connected, busy, onEnd, onLeave }) {
+export default function Match({
+  room,
+  connected,
+  busy,
+  onLocationUpdate,
+  onEnd,
+  onLeave,
+}) {
   const ended = room.status === 'ENDED'
   const role = ROLE_COPY[room.me.role] || {
     title: 'Role assigned',
@@ -62,6 +70,11 @@ export default function Match({ room, connected, busy, onEnd, onLeave }) {
         <p className="mt-3 text-sm leading-relaxed opacity-80">{role.text}</p>
       </section>
 
+      {/* Interactive BMSIT Bangalore Campus Map & Radar */}
+      <section className="space-y-2">
+        <CampusMap room={room} onLocationUpdate={onLocationUpdate} />
+      </section>
+
       {ended && (
         <section className="rounded-3xl border border-slate-800 bg-slate-900/60 p-5 text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
@@ -86,15 +99,6 @@ export default function Match({ room, connected, busy, onEnd, onLeave }) {
         )}
       </section>
 
-      {!ended && (
-        <section className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/30 p-5 text-center">
-          <p className="text-sm font-bold text-slate-300">Map &amp; GPS coming next</p>
-          <p className="mt-2 text-xs leading-relaxed text-slate-500">
-            Phase 2 adds the campus map, 25-second location updates and role-filtered
-            live markers.
-          </p>
-        </section>
-      )}
 
       <div className="space-y-3">
         {!ended && room.me.is_host && (

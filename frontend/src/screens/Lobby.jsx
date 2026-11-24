@@ -79,6 +79,21 @@ export default function Lobby({ room, connected, busy, onStart, onLeave }) {
         </button>
       </section>
 
+      <section className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 px-4 py-3 text-xs text-emerald-300">
+        <span className="text-xl">📍</span>
+        <div>
+          <p className="font-bold uppercase tracking-wider text-[11px] text-emerald-400">
+            Active Game Arena
+          </p>
+          <p className="font-semibold text-slate-200">
+            BMS Institute of Technology &amp; Management (BMSIT)
+          </p>
+          <p className="text-[10px] text-slate-400">
+            Doddaballapur Rd, Avalahalli, Yelahanka, Bangalore
+          </p>
+        </div>
+      </section>
+
       <section className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-sm font-bold text-slate-300">

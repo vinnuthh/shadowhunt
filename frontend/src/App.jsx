@@ -99,6 +99,16 @@ export default function App() {
     }
   }
 
+  async function handleLocationUpdate(lat, lng) {
+    if (!session?.code || !session?.token) return
+    try {
+      const updated = await api.updateLocation(session.code, session.token, lat, lng)
+      if (updated) setRoom(updated)
+    } catch {
+      // Background location update failures are non-blocking
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_50%_-20%,#064e3b_0%,#020617_55%)]">
       {error && (
@@ -145,6 +155,7 @@ export default function App() {
           room={room}
           connected={connected}
           busy={busy}
+          onLocationUpdate={handleLocationUpdate}
           onEnd={handleEnd}
           onLeave={handleLeave}
         />

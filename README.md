@@ -3,19 +3,21 @@
 A mobile-first, campus-based multiplayer game of hide and seek. This repository is
 being built against `Shadow_Hunt_Master_Project_Blueprint.pdf`.
 
-**Current status: Phase 1 — working room & lobby prototype.**
+**Current status: Phase 2 In-Progress — BMSIT Bangalore Campus Map & Geofence Live.**
 
 Implemented:
 - Host creates a room and gets a 6-character code plus a shareable invite link
 - Players join with a display name; lobby updates live over WebSockets
-- Host selects the Hunter count (suggested 1:4) and starts the match
-- Backend randomly assigns roles; each player only sees their own role
-- Host can end the match; roles are revealed and the room is closed to new joins
+- Active Game Arena set to **BMS Institute of Technology and Management (BMSIT), Bangalore** (Doddaballapur Rd, Avalahalli, Yelahanka)
+- Interactive campus map with CartoDB Dark Matter / OSM layers
+- High-precision 20-vertex OpenStreetMap geofence polygon for the BMSIT campus boundary
+- Real-time geofence verification (ray-casting point-in-polygon checks for "Inside BMSIT" vs "Outside Boundary")
+- Key BMSIT campus landmarks mapped with icons & tactical intel (BSN Block/Library, Academic Block 1, Mechanical/Lab Block, Amphitheatre, Canteen/Food Court, Sports Ground, Basketball Courts, Boys Hostel, Main Gate)
+- Live device GPS tracking toggle with continuous tracking
+- 1-click BMSIT landmark quick-jump and simulated campus walk patrol mode for easy testing from anywhere
+- 25-second location radar sweep loop (from Master Blueprint) with HUD animations
+- Host selects Hunter count and starts match; server assigns roles; roles revealed upon match conclusion
 - Player session tokens, server-side validation, reconnecting socket
-
-Not implemented yet: campus map/GPS, 25-second location updates, capture/spectator
-mode, results statistics, Supabase auth, production deployment. See the blueprint
-for the full roadmap.
 
 ## Run locally
 

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from .config import MAX_NAME_LENGTH, MAX_PLAYERS_PER_ROOM
 from .models import Match, Player, Room
+from .campus import BMSIT_CAMPUS, is_point_in_bmsit
 
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # avoids I, O, 0, 1
 ROLE_HUNTER = "HUNTER"
@@ -231,14 +232,52 @@ def end_match(db: Session, room: Room, player: Player) -> Match:
     return match
 
 
+def update_player_location(
+    db: Session, room: Room, player: Player, lat: float, lng: float
+) -> Player:
+    if room.status == "ENDED":
+        raise GameError("This room has already ended.", 409)
+    if player.status == "LEFT":
+        raise GameError("Player has left this room.", 403)
+    player.lat = lat
+    player.lng = lng
+    player.location_updated_at = _now()
+    db.commit()
+    return player
+
+
 def _summary(player: Player, viewer: Player, reveal_roles: bool = False) -> dict:
+    is_self = player.id == viewer.id
+    can_see_location = (
+        is_self
+        or reveal_roles
+        or player.room.status == "WAITING"
+        or (player.role == viewer.role and player.role is not None)
+        or (viewer.role == ROLE_HUNTER and player.role == ROLE_SHADOW)
+        or (viewer.role == ROLE_SHADOW and player.role == ROLE_HUNTER)
+    )
+
+    in_bounds = (
+        is_point_in_bmsit(player.lat, player.lng)
+        if (player.lat is not None and player.lng is not None)
+        else None
+    )
+
     return {
         "id": player.id,
         "display_name": player.display_name,
         "is_host": player.id == player.room.host_player_id,
         "status": player.status,
         # Roles stay private during play and are revealed once the match ends.
-        "role": player.role if (reveal_roles or player.id == viewer.id) else None,
+        "role": player.role if (reveal_roles or is_self) else None,
+        "lat": player.lat if can_see_location else None,
+        "lng": player.lng if can_see_location else None,
+        "location_updated_at": (
+            player.location_updated_at.isoformat()
+            if (can_see_location and player.location_updated_at is not None)
+            else None
+        ),
+        "is_in_bounds": in_bounds if can_see_location else None,
     }
 
 
@@ -261,6 +300,7 @@ def room_state(db: Session, room: Room, viewer: Player) -> dict:
         "players": [_summary(p, viewer, reveal_roles) for p in players],
         "match_id": match_id,
         "me": _summary(viewer, viewer, reveal_roles),
+        "campus": BMSIT_CAMPUS,
     }
 
 

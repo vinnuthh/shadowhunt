@@ -22,3 +22,8 @@ input {
 input {
   font-size: 16px;
 }
+
+/* High-contrast dark tactical styling for map tiles without watermarks */
+.dark-map-tiles {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.2) brightness(0.7);
+}

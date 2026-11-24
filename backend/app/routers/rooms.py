@@ -13,9 +13,11 @@ from sqlalchemy.orm import Session
 from .. import services
 from ..db import SessionLocal, get_db
 from ..realtime import broadcast_state, mutation_lock, register, unregister
+from ..campus import BMSIT_CAMPUS
 from ..schemas import (
     DisplayNameRequest,
     HunterCountRequest,
+    LocationRequest,
     RoomState,
     SessionResponse,
     StartResponse,
@@ -130,6 +132,30 @@ async def leave_room(
         raise _http_error(error) from error
 
 
+@router.get("/api/campus")
+def read_campus() -> dict:
+    """Returns the BMSIT Bangalore campus boundary, center and landmarks."""
+    return BMSIT_CAMPUS
+
+
+@router.post("/api/rooms/{code}/location", response_model=RoomState)
+async def update_location(
+    code: str,
+    payload: LocationRequest,
+    x_player_token: str = Header(default="", alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+) -> RoomState:
+    try:
+        async with mutation_lock:
+            room, player = services.require_membership(db, code, x_player_token)
+            services.update_player_location(db, room, player, payload.lat, payload.lng)
+            state = services.room_state(db, room, player)
+        await broadcast_state(room.code)
+        return RoomState(**state)
+    except services.GameError as error:
+        raise _http_error(error) from error
+
+
 @router.websocket("/ws/rooms/{code}")
 async def room_socket(
     websocket: WebSocket,
@@ -156,9 +182,23 @@ async def room_socket(
                 {"type": "state", "payload": services.room_state(db, room, player)}
             )
         while True:
-            # Client messages are ignored in Phase 1; the socket is push-only.
-            await websocket.receive_text()
+            data = await websocket.receive_json()
+            if isinstance(data, dict) and data.get("type") == "location":
+                lat = data.get("lat")
+                lng = data.get("lng")
+                if isinstance(lat, (int, float)) and isinstance(lng, (int, float)):
+                    async with mutation_lock:
+                        with SessionLocal() as db:
+                            room, player = services.require_membership(
+                                db, room_code, player_token
+                            )
+                            services.update_player_location(
+                                db, room, player, float(lat), float(lng)
+                            )
+                    await broadcast_state(room_code)
     except WebSocketDisconnect:
+        pass
+    except Exception:
         pass
     finally:
         await unregister(room_code, player_token, websocket)

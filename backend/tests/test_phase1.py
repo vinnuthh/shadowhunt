@@ -210,3 +210,45 @@ def test_invalid_session_and_code_are_rejected(client):
 
     wrong_room = client.get("/api/rooms/AAAAAA", headers=auth(host["token"]))
     assert wrong_room.status_code in {403, 404}
+
+
+def test_bmsit_campus_metadata_and_geofence(client):
+    res = client.get("/api/campus")
+    assert res.status_code == 200
+    campus = res.json()
+    assert campus["id"] == "bmsit-bangalore"
+    assert "BMSIT" in campus["short_name"]
+    assert len(campus["landmarks"]) >= 5
+    assert len(campus["boundary"]) >= 10
+    assert 13.13 <= campus["center"]["lat"] <= 13.14
+    assert 77.56 <= campus["center"]["lng"] <= 77.58
+
+
+def test_player_location_update_inside_and_outside_bmsit(client):
+    host = create_room(client, "Host")
+    join(client, host["code"], "Seeker")
+
+    # Inside BMSIT (BSN Block coordinates)
+    update_res = client.post(
+        f"/api/rooms/{host['code']}/location",
+        json={"lat": 13.1342, "lng": 77.5680},
+        headers=auth(host["token"]),
+    )
+    assert update_res.status_code == 200
+    body = update_res.json()
+    assert body["me"]["lat"] == 13.1342
+    assert body["me"]["lng"] == 77.5680
+    assert body["me"]["is_in_bounds"] is True
+    assert body["campus"]["id"] == "bmsit-bangalore"
+
+    # Outside BMSIT (e.g. MG Road, Bangalore: 12.9716, 77.5946)
+    out_res = client.post(
+        f"/api/rooms/{host['code']}/location",
+        json={"lat": 12.9716, "lng": 77.5946},
+        headers=auth(host["token"]),
+    )
+    assert out_res.status_code == 200
+    out_body = out_res.json()
+    assert out_body["me"]["lat"] == 12.9716
+    assert out_body["me"]["is_in_bounds"] is False
+
